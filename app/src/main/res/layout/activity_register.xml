@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:id="@+id/email"
+                    android:id="@+id/register_email_field"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_email"
@@ -51,7 +51,7 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:id="@+id/password"
+                    android:id="@+id/register_password_field"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_password"
@@ -74,61 +74,36 @@
                 android:textStyle="bold" />
 
             <LinearLayout
-                android:id="@+id/register_layout_or_1"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <View
-                    android:layout_width="200dp"
-                    android:layout_height="1dp"
-                    android:background="#c4c8c9"
-                    android:layout_margin="5dp" />
-                <TextView
-                    android:padding="5dp"
-                    android:text="OR"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-                <View
-                    android:layout_width="200dp"
-                    android:layout_height="1dp"
-                    android:background="#c4c8c9"
-                    android:layout_margin="5dp" />
-
-            </LinearLayout>
-
-            <LinearLayout
                 android:id="@+id/register_layout_or_2"
-                android:gravity="center"
-                android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <View
                     android:layout_width="200dp"
                     android:layout_height="1dp"
-                    android:background="#c4c8c9"
-                    android:layout_margin="5dp" />
+                    android:layout_margin="5dp"
+                    android:background="#c4c8c9" />
                 <TextView
-                    android:padding="5dp"
-                    android:text="@string/static_register_got_account"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:padding="5dp"
+                    android:text="@string/static_register_got_account" />
                 <View
                     android:layout_width="200dp"
                     android:layout_height="1dp"
-                    android:background="#c4c8c9"
-                    android:layout_margin="5dp" />
+                    android:layout_margin="5dp"
+                    android:background="#c4c8c9" />
 
             </LinearLayout>
 
             <Button
                 android:id="@+id/register_login"
                 style="?android:textAppearanceSmall"
-                android:text="@string/action_register_back_to_login"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:text="@string/action_register_back_to_login" />
 
         </LinearLayout>
     </ScrollView>
