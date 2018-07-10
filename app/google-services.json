@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1028152086895",
+    "firebase_url": "https://bookswap-meomeo.firebaseio.com",
+    "project_id": "bookswap-meomeo",
+    "storage_bucket": "bookswap-meomeo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1028152086895:android:ebdfe00c28aca9ab",
+        "android_client_info": {
+          "package_name": "vn.edu.hcmus.fit.cntn15.bookswap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1028152086895-nfbjir3utk4oqsghcaf1cdll6f58kamv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "vn.edu.hcmus.fit.cntn15.bookswap",
+            "certificate_hash": "30a593beb0a1cb5411d1c0f891d9e45784273100"
+          }
+        },
+        {
+          "client_id": "1028152086895-jb9t7voioago4iep3rqan38ebh0ta24t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAicVmLUvjz6gTU1ielvITS4IszQIOHMJY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1028152086895-jb9t7voioago4iep3rqan38ebh0ta24t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
