@@ -1,5 +1,6 @@
 package vn.edu.hcmus.fit.cntn15.bookswap;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -12,16 +13,23 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
+
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mAuth = FirebaseAuth.getInstance();
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -78,8 +86,10 @@ public class DrawerActivity extends AppCompatActivity
             case R.id.nav_history:
                 fragment = new History();
                 break;
-            case R.id.nav_logout:
-                fragment = new Logout();
+            case R.id.nav_logout: {
+                mAuth.signOut();
+                startActivity(new Intent(DrawerActivity.this, LoginActivity.class));
+            }
                 break;
             case R.id.nav_map:
                 fragment = new Map();

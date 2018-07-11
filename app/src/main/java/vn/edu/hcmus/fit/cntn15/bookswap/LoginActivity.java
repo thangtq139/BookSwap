@@ -83,7 +83,7 @@ public class LoginActivity extends AppCompatActivity {
         mGuestSignIn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO: Login as guest
+                GuestLogin();
             }
         });
 
@@ -243,6 +243,22 @@ public class LoginActivity extends AppCompatActivity {
                             Log.w("TAG", "signInWithEmail", task.getException());
                             Toast.makeText(LoginActivity.this, "Authentication failed.",
                                     Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+    public void GuestLogin() {
+        mAuth.signInAnonymously()
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            startActivity(new Intent(LoginActivity.this, DrawerActivity.class));
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.d("GuestLogin", "signInAnonymously:failure", task.getException());
                         }
                     }
                 });
