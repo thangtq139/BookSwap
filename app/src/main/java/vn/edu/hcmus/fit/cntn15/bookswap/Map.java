@@ -22,20 +22,16 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 
-import java.util.List;
-
 
 public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
-    private GoogleMap mMap;
     MapView mMapView;
-
+    private GoogleMap mMap;
 
     @Nullable
     @Override
@@ -75,6 +71,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         LatLng sydney = new LatLng(-34, 151);
         //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney").snippet("This is a very long text in order to test compatible. Please don't read this. Or you will regret spending 5 mininutes of your life wasted."));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
     }
 
     public boolean checkLocationPermission() {
@@ -96,8 +93,8 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Prompt the user once explanation has been shown
-                                ActivityCompat.requestPermissions(getActivity(),new String[]
-                                        {Manifest.permission.ACCESS_FINE_LOCATION},1);
+                                ActivityCompat.requestPermissions(getActivity(), new String[]
+                                        {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                             }
                         })
                         .create()
@@ -120,8 +117,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case 1:
-            {
+            case 1: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -150,9 +146,31 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
 
         Gson gson = new Gson();
         BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
-        for (BookInfo book : books){
+        for (BookInfo book : books) {
             LatLng point = new LatLng(book.Lat, book.Lng);
             map.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+            map.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                @Override
+                public void onInfoWindowClick(Marker marker) {
+                    new AlertDialog.Builder(getActivity())
+                            .setTitle("Borrow?")
+                            .setMessage("Do you wanna build a snowman?")
+                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    //Borrow
+                                }
+                            })
+                            .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //nope
+                                }
+                            })
+                            .create()
+                            .show();
+                }
+            });
         }
     }
 
@@ -194,7 +212,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         // We return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
-        return false;
+        return true;
     }
 
 
@@ -223,10 +241,11 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
             return mContents;
         }
 
+
         private void render(Marker marker, View view) {
 
             String title = marker.getTitle();
-            TextView titleUi = ((TextView) view.findViewById(R.id.title));
+            TextView titleUi = view.findViewById(R.id.title);
             if (title != null) {
                 // Spannable string allows us to edit the formatting of the text.
                 SpannableString titleText = new SpannableString(title);
@@ -237,7 +256,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
             }
 
             String snippet = marker.getSnippet();
-            TextView snippetUi = ((TextView) view.findViewById(R.id.snippet));
+            TextView snippetUi = view.findViewById(R.id.snippet);
             if (snippet != null && snippet.length() > 12) {
                 SpannableString snippetText = new SpannableString(snippet);
                 snippetText.setSpan(new ForegroundColorSpan(Color.MAGENTA), 0, 10, 0);
@@ -248,4 +267,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
             }
         }
     }
+
+
 }
+

@@ -48,6 +48,9 @@
             android:name=".DrawerActivity"
             android:label="@string/title_activity_drawer"
             android:theme="@style/AppTheme" />
+        <activity
+            android:name=".HistoryActivity"
+            android:label="HistoryActivity" />
     </application>
 
 </manifest>

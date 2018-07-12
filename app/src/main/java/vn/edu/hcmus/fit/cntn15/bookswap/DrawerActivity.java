@@ -84,7 +84,8 @@ public class DrawerActivity extends AppCompatActivity
         //initializing the fragment object which is selected
         switch (itemId) {
             case R.id.nav_history:
-                fragment = new History();
+//                fragment = new History();
+                startActivity(new Intent(DrawerActivity.this, HistoryActivity.class));
                 break;
             case R.id.nav_logout: {
                 mAuth.signOut();
