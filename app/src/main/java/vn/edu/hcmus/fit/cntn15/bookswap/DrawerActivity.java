@@ -1,5 +1,7 @@
 package vn.edu.hcmus.fit.cntn15.bookswap;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -12,6 +14,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.EditText;
 
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -69,6 +75,10 @@ public class DrawerActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+//            Log.i("clicked", "clicked");
+            CustomDialogClass customDialog = new CustomDialogClass(DrawerActivity.this);
+            customDialog.show();
+
             return true;
         }
 
@@ -114,5 +124,49 @@ public class DrawerActivity extends AppCompatActivity
 
         displaySelectedScreen(item.getItemId());
         return true;
+    }
+
+    public class CustomDialogClass extends Dialog {
+
+        public Activity activity;
+        public Button yes, no;
+        public EditText droppedTitle, droppedDesc;
+
+        public CustomDialogClass(Activity a) {
+            super(a);
+            // TODO Auto-generated constructor stub
+            this.activity = a;
+        }
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            setContentView(R.layout.drop_dialog);
+
+            yes = findViewById(R.id.drop_yes);
+            no = findViewById(R.id.drop_no);
+            droppedTitle = findViewById(R.id.DropTitleInput);
+            droppedDesc = findViewById(R.id.DropDescInput);
+
+            yes.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String skeleton = "[{\"name\": \"" + droppedTitle + "\", \"description\": \"" + droppedDesc + "\"}]";
+//                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+//                    String uid = user.getUid();
+//                    Log.i("clicked", uid);
+                }
+            });
+
+            no.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dismiss();
+                }
+            });
+
+        }
+
     }
 }

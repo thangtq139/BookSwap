@@ -26,6 +26,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
@@ -34,8 +36,25 @@ import java.util.HashMap;
 public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
     MapView mMapView;
+    Handler mapFetcher = new Handler();
     private GoogleMap mMap;
     private HashMap<String, Marker> bookMarkers = new HashMap<>();
+    Runnable updateBookData = new Runnable() {
+        @Override
+        public void run() {
+            String skeleton = "[{\"id\": \"3\", \"name\": \"Compedium\", \"description\": \"Vampire\", \"Lat\": -31.952854, \"Lng\": 115.857342}]";
+            Gson gson = new Gson();
+            BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
+            for (BookInfo book : books) {
+                if (!bookMarkers.containsKey(book.id)) {
+                    LatLng point = new LatLng(book.Lat, book.Lng);
+                    Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                    bookMarkers.put(book.id, marker);
+                }
+            }
+            mapFetcher.postDelayed(this, 5000);
+        }
+    };
 
     @Nullable
     @Override
@@ -80,6 +99,8 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Borrow
+                                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                String uid = user.getUid();
                             }
                         })
                         .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -99,25 +120,6 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
         mapFetcher.postDelayed(updateBookData, 5000);
     }
-
-    Handler mapFetcher = new Handler();
-
-    Runnable updateBookData = new Runnable() {
-        @Override
-        public void run() {
-            String skeleton = "[{\"id\": \"3\", \"name\": \"Compedium\", \"description\": \"Vampire\", \"Lat\": -31.952854, \"Lng\": 115.857342}]";
-            Gson gson = new Gson();
-            BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
-            for (BookInfo book : books) {
-                if (!bookMarkers.containsKey(book.id)) {
-                    LatLng point = new LatLng(book.Lat, book.Lng);
-                    Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
-                    bookMarkers.put(book.id, marker);
-                }
-            }
-            mapFetcher.postDelayed(this, 5000);
-        }
-    };
 
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(getActivity(),
