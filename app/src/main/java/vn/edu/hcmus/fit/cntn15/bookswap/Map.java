@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -27,11 +28,14 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+
 
 public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
     MapView mMapView;
     private GoogleMap mMap;
+    private HashMap<String, Marker> bookMarkers = new HashMap<>();
 
     @Nullable
     @Override
@@ -66,13 +70,54 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
             }
         }
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                new AlertDialog.Builder(getActivity())
+                        .setTitle("Borrow?")
+                        .setMessage("Do you wanna build a snowman?")
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Borrow
+                            }
+                        })
+                        .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                //nope
+                            }
+                        })
+                        .create()
+                        .show();
+            }
+        });
         // Add a marker in Sydney and move the camera
         initBookLocation(mMap);
         LatLng sydney = new LatLng(-34, 151);
         //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney").snippet("This is a very long text in order to test compatible. Please don't read this. Or you will regret spending 5 mininutes of your life wasted."));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
+        mapFetcher.postDelayed(updateBookData, 5000);
     }
+
+    Handler mapFetcher = new Handler();
+
+    Runnable updateBookData = new Runnable() {
+        @Override
+        public void run() {
+            String skeleton = "[{\"id\": \"3\", \"name\": \"Compedium\", \"description\": \"Vampire\", \"Lat\": -31.952854, \"Lng\": 115.857342}]";
+            Gson gson = new Gson();
+            BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
+            for (BookInfo book : books) {
+                if (!bookMarkers.containsKey(book.id)) {
+                    LatLng point = new LatLng(book.Lat, book.Lng);
+                    Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                    bookMarkers.put(book.id, marker);
+                }
+            }
+            mapFetcher.postDelayed(this, 5000);
+        }
+    };
 
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(getActivity(),
@@ -148,29 +193,8 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
         for (BookInfo book : books) {
             LatLng point = new LatLng(book.Lat, book.Lng);
-            map.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
-            map.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-                @Override
-                public void onInfoWindowClick(Marker marker) {
-                    new AlertDialog.Builder(getActivity())
-                            .setTitle("Borrow?")
-                            .setMessage("Do you wanna build a snowman?")
-                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    //Borrow
-                                }
-                            })
-                            .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    //nope
-                                }
-                            })
-                            .create()
-                            .show();
-                }
-            });
+            Marker marker = map.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+            bookMarkers.put(book.id, marker);
         }
     }
 
@@ -196,6 +220,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
 
     @Override
     public void onDestroy() {
+        mapFetcher.removeCallbacks(updateBookData);
         super.onDestroy();
         mMapView.onDestroy();
     }
@@ -214,7 +239,6 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         // marker is centered and for the marker's info window to open, if it has one).
         return true;
     }
-
 
     class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 
