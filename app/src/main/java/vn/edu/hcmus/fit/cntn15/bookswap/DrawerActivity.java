@@ -1,9 +1,7 @@
 package vn.edu.hcmus.fit.cntn15.bookswap;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -17,7 +15,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -31,8 +28,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -47,18 +42,16 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private FirebaseAuth mAuth;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private boolean mLocationPermissionGranted;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
-    private Location mLastKnownLocation;
-
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://171.244.43.48:13097")
             .addConverterFactory(GsonConverterFactory.create())
             .build();
-
     ServerAPI mServer = retrofit.create(ServerAPI.class);
+    private FirebaseAuth mAuth;
+    private boolean mLocationPermissionGranted;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
+    private Location mLastKnownLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +156,39 @@ public class DrawerActivity extends AppCompatActivity
         return true;
     }
 
+    private void getLocationPermission() {
+        /*
+         * Request location permission, so that we can get the location of the
+         * device. The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mLocationPermissionGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        mLocationPermissionGranted = false;
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mLocationPermissionGranted = true;
+                }
+            }
+        }
+    }
+
     public class CustomDialogClass extends Dialog {
 
         public Activity activity;
@@ -225,6 +251,7 @@ public class DrawerActivity extends AppCompatActivity
                                         //Log.e(TAG, "Exception: %s", task.getException());
                                         Toast.makeText(getContext(), "Unable to get current location", Toast.LENGTH_SHORT).show();
                                     }
+                                    dismiss();
                                 }
                             });
                         } else {
@@ -249,39 +276,6 @@ public class DrawerActivity extends AppCompatActivity
 
         }
 
-    }
-
-    private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        mLocationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mLocationPermissionGranted = true;
-                }
-            }
-        }
     }
 
 }
