@@ -10,7 +10,7 @@ public interface ServerAPI {
     Call<BookInfo[]> fetchBookData();
 
     @POST("/user/give")
-    Call<BookURI> addNewBook(@Body SentBook body);
+    Call<BookURI> giveBook(@Body SentBook body);
 
     @POST("/user/take")
     Call<GetStatus> takeBook(@Body TakenBook body);

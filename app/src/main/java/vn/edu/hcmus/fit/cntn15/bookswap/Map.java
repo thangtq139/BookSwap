@@ -4,8 +4,10 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -13,11 +15,15 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -26,6 +32,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.Gson;
@@ -42,20 +50,29 @@ import retrofit2.http.GET;
 
 public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
+    private static final String TAG = Map.class.getSimpleName();
+
     MapView mMapView;
     Handler mapFetcher = new Handler();
     private GoogleMap mMap;
     private HashMap<String, Marker> bookMarkers = new HashMap<>();
+    private boolean mLocationPermissionGranted;
+    protected Location mLastKnownLocation;
+    private final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
+    private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
+    private static final int DEFAULT_ZOOM = 15;
+
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://171.244.43.48:13097")
             .addConverterFactory(GsonConverterFactory.create())
             .build();
+    ServerAPI mServer = retrofit.create(ServerAPI.class);
 
     Runnable updateBookData = new Runnable() {
         @Override
         public void run() {
-            ServerAPI server = retrofit.create(ServerAPI.class);
-            Call<BookInfo[]> cBooks = server.fetchBookData();
+            Call<BookInfo[]> cBooks = mServer.fetchBookData();
             cBooks.enqueue(new Callback<BookInfo[]>() {
                 @Override
                 public void onResponse(Call<BookInfo[]> call, Response<BookInfo[]> response) {
@@ -64,6 +81,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                         if (book.taken == 0) {
                             LatLng point = new LatLng(book.Lat, book.Lng);
                             Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                            marker.setTag(book.id);
                             bookMarkers.put(book.id, marker);
                         }
                     }
@@ -100,6 +118,9 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         mMapView = rootView.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
 
+        // Construct a FusedLocationProviderClient.
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+
         mMapView.onResume();
         try {
             MapsInitializer.initialize(getActivity().getApplicationContext());
@@ -113,19 +134,13 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if (checkLocationPermission()) {
-            if (ContextCompat.checkSelfPermission(getActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
+        updateLocationUI();
+        getLocationPermission();
 
-                //Request location updates:
-                mMap.setMyLocationEnabled(true);
-            }
-        }
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
-            public void onInfoWindowClick(Marker marker) {
+            public void onInfoWindowClick(final Marker marker) {
                 new AlertDialog.Builder(getActivity())
                         .setTitle("Borrow?")
                         .setMessage("Do you wanna build a snowman?")
@@ -133,8 +148,27 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Borrow
+                                String book_id = (String)marker.getTag();
                                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                                 String uid = user.getUid();
+
+                                Call<GetStatus> cTakeBook = mServer.takeBook(new TakenBook(uid, book_id));
+                                cTakeBook.enqueue(new Callback<GetStatus>() {
+                                    @Override
+                                    public void onResponse(Call<GetStatus> call, Response<GetStatus> response) {
+                                        GetStatus status = response.body();
+                                        if (status.status.equals("ok")) {
+                                            Toast.makeText(getContext(), "Book looted.", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            Toast.makeText(getContext(), "Loot failed", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<GetStatus> call, Throwable t) {
+                                        call.cancel();
+                                    }
+                                });
                             }
                         })
                         .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -149,14 +183,68 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
         });
         // Add a marker in Sydney and move the camera
         initBookLocation(mMap);
+        /*
         LatLng sydney = new LatLng(-34, 151);
         //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney").snippet("This is a very long text in order to test compatible. Please don't read this. Or you will regret spending 5 mininutes of your life wasted."));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        */
+        getDeviceLocation();
         mapFetcher.postDelayed(updateBookData, 5000);
     }
 
-    public boolean checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(getActivity(),
+    private void getDeviceLocation() {
+        /*
+         * Get the best and most recent location of the device, which may be null in rare
+         * cases when a location is not available.
+         */
+        try {
+            if (mLocationPermissionGranted) {
+                Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
+                locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Location> task) {
+                        if (task.isSuccessful()) {
+                            // Set the map's camera position to the current location of the device.
+                            mLastKnownLocation = task.getResult();
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                    new LatLng(mLastKnownLocation.getLatitude(),
+                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                        } else {
+                            Log.d(TAG, "Current location is null. Using defaults.");
+                            Log.e(TAG, "Exception: %s", task.getException());
+                            mMap.moveCamera(CameraUpdateFactory
+                                    .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
+                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                        }
+                    }
+                });
+            }
+        } catch (SecurityException e)  {
+            Log.e("Exception: %s", e.getMessage());
+        }
+    }
+
+    private void updateLocationUI() {
+        if (mMap == null) {
+            return;
+        }
+        try {
+            if (mLocationPermissionGranted) {
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+            } else {
+                mMap.setMyLocationEnabled(false);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mLastKnownLocation = null;
+                getLocationPermission();
+            }
+        } catch (SecurityException e)  {
+            Log.e("Exception: %s", e.getMessage());
+        }
+    }
+
+    public void getLocationPermission() {
+        if (ContextCompat.checkSelfPermission(getContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
@@ -175,7 +263,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Prompt the user once explanation has been shown
                                 ActivityCompat.requestPermissions(getActivity(), new String[]
-                                        {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                                        {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
                             }
                         })
                         .create()
@@ -186,11 +274,10 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                 // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(getActivity(),
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
+                        PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
             }
-            return false;
         } else {
-            return true;
+            mLocationPermissionGranted = true;
         }
     }
 
@@ -198,7 +285,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case 1: {
+            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -209,11 +296,10 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
 
-
-                        mMap.setMyLocationEnabled(true);
+                        mLocationPermissionGranted = true;
+                        updateLocationUI();
                     }
 
-                } else {
                 }
                 return;
             }
@@ -222,9 +308,6 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     }
 
     void initBookLocation(GoogleMap map) {
-        String skeleton = "[{\"id\": \"1\", \"name\": \"Harry Potter\", \"description\": \"meo meo\", \"Lat\": -27.47093, \"Lng\": 153.0235, \"taken\": 0}," +
-                "{\"id\": \"2\", \"name\": \"LOTR\", \"description\": \"sad\", \"Lat\": -37.81319, \"Lng\": 144.96298, \"taken\": 0}]";
-
         ServerAPI server = retrofit.create(ServerAPI.class);
         Call<BookInfo[]> cBooks = server.fetchBookData();
         cBooks.enqueue(new Callback<BookInfo[]>() {
@@ -235,6 +318,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                     if (book.taken == 0) {
                         LatLng point = new LatLng(book.Lat, book.Lng);
                         Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                        marker.setTag(book.id);
                         bookMarkers.put(book.id, marker);
                     }
                 }
@@ -246,6 +330,9 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
             }
         });
         /*
+        String skeleton = "[{\"id\": \"1\", \"name\": \"Harry Potter\", \"description\": \"meo meo\", \"Lat\": -27.47093, \"Lng\": 153.0235, \"taken\": 0}," +
+                "{\"id\": \"2\", \"name\": \"LOTR\", \"description\": \"sad\", \"Lat\": -37.81319, \"Lng\": 144.96298, \"taken\": 0}]";
+
         Gson gson = new Gson();
         BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
         for (BookInfo book : books) {
