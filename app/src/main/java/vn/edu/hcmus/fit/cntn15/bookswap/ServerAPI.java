@@ -15,6 +15,6 @@ public interface ServerAPI {
     @POST("/user/take")
     Call<GetStatus> takeBook(@Body TakenBook body);
 
-    @GET("/user/history")
+    @POST("/user/history")
     Call<UserBook[]> getHistory(@Body HistoryUser body);
 }

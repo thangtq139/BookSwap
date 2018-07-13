@@ -47,6 +47,10 @@ public class HistoryActivity extends Activity {
                 UserBook[] books = response.body();
                 String[] action = new String[books.length];
                 String[] title = new String[books.length];
+                for (int i = 0; i < books.length; ++i) {
+                    title[i] = books[i].name;
+                    action[i] = books[i].type;
+                }
                 CustomList listAdapter = new CustomList(HistoryActivity.this, title, action);
                 list = findViewById(R.id.history_list);
                 list.setAdapter(listAdapter);
