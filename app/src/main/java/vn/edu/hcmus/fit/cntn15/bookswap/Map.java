@@ -32,6 +32,13 @@ import com.google.gson.Gson;
 
 import java.util.HashMap;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+
 
 public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
@@ -39,9 +46,35 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     Handler mapFetcher = new Handler();
     private GoogleMap mMap;
     private HashMap<String, Marker> bookMarkers = new HashMap<>();
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl("http://171.244.43.48:13097")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build();
+
     Runnable updateBookData = new Runnable() {
         @Override
         public void run() {
+            ServerAPI server = retrofit.create(ServerAPI.class);
+            Call<BookInfo[]> cBooks = server.fetchBookData();
+            cBooks.enqueue(new Callback<BookInfo[]>() {
+                @Override
+                public void onResponse(Call<BookInfo[]> call, Response<BookInfo[]> response) {
+                    BookInfo[] books = response.body();
+                    for (BookInfo book : books) {
+                        if (book.taken == 0) {
+                            LatLng point = new LatLng(book.Lat, book.Lng);
+                            Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                            bookMarkers.put(book.id, marker);
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<BookInfo[]> call, Throwable t) {
+                    call.cancel();
+                }
+            });
+            /*
             String skeleton = "[{\"id\": \"3\", \"name\": \"Compedium\", \"description\": \"Vampire\", \"Lat\": -31.952854, \"Lng\": 115.857342}]";
             Gson gson = new Gson();
             BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
@@ -52,6 +85,7 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                     bookMarkers.put(book.id, marker);
                 }
             }
+            */
             mapFetcher.postDelayed(this, 5000);
         }
     };
@@ -188,16 +222,40 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
     }
 
     void initBookLocation(GoogleMap map) {
-        String skeleton = "[{\"id\": \"1\", \"name\": \"Harry Potter\", \"description\": \"meo meo\", \"Lat\": -27.47093, \"Lng\": 153.0235}," +
-                "{\"id\": \"2\", \"name\": \"LOTR\", \"description\": \"sad\", \"Lat\": -37.81319, \"Lng\": 144.96298}]";
+        String skeleton = "[{\"id\": \"1\", \"name\": \"Harry Potter\", \"description\": \"meo meo\", \"Lat\": -27.47093, \"Lng\": 153.0235, \"taken\": 0}," +
+                "{\"id\": \"2\", \"name\": \"LOTR\", \"description\": \"sad\", \"Lat\": -37.81319, \"Lng\": 144.96298, \"taken\": 0}]";
 
+        ServerAPI server = retrofit.create(ServerAPI.class);
+        Call<BookInfo[]> cBooks = server.fetchBookData();
+        cBooks.enqueue(new Callback<BookInfo[]>() {
+            @Override
+            public void onResponse(Call<BookInfo[]> call, Response<BookInfo[]> response) {
+                BookInfo[] books = response.body();
+                for (BookInfo book : books) {
+                    if (book.taken == 0) {
+                        LatLng point = new LatLng(book.Lat, book.Lng);
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                        bookMarkers.put(book.id, marker);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<BookInfo[]> call, Throwable t) {
+                call.cancel();
+            }
+        });
+        /*
         Gson gson = new Gson();
         BookInfo[] books = gson.fromJson(skeleton, BookInfo[].class);
         for (BookInfo book : books) {
-            LatLng point = new LatLng(book.Lat, book.Lng);
-            Marker marker = map.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
-            bookMarkers.put(book.id, marker);
+            if (book.taken == 0) {
+                LatLng point = new LatLng(book.Lat, book.Lng);
+                Marker marker = map.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                bookMarkers.put(book.id, marker);
+            }
         }
+        */
     }
 
 

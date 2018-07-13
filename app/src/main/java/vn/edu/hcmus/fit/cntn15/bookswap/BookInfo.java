@@ -6,5 +6,6 @@ public class BookInfo {
     public String description;
     public double Lng;
     public double Lat;
+    public int taken;
     public BookInfo() {}
 }
