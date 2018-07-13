@@ -198,6 +198,8 @@ public class DrawerActivity extends AppCompatActivity
                                     if (task.isSuccessful()) {
                                         // Set the map's camera position to the current location of the device.
                                         mLastKnownLocation = task.getResult();
+                                        Log.i("Location", String.format("(%f, %f)", mLastKnownLocation.getLatitude(),
+                                                mLastKnownLocation.getLongitude()));
                                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                                         Call<BookURI> cGiveBook = mServer.giveBook(new SentBook(user.getUid(), droppedTitle.getText().toString(), droppedDesc.getText().toString(),
                                                 mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()));
@@ -225,8 +227,10 @@ public class DrawerActivity extends AppCompatActivity
                                     }
                                 }
                             });
+                        } else {
+                            Toast.makeText(getContext(), "Unable to get current location", Toast.LENGTH_SHORT).show();
                         }
-                        String skeleton = "[{\"name\": \"" + droppedTitle + "\", \"description\": \"" + droppedDesc + "\"}]";
+                        //String skeleton = "[{\"name\": \"" + droppedTitle + "\", \"description\": \"" + droppedDesc + "\"}]";
 //                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 //                    String uid = user.getUid();
 //                    Log.i("clicked", uid);

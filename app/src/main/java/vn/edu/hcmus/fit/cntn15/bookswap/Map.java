@@ -77,12 +77,21 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                 @Override
                 public void onResponse(Call<BookInfo[]> call, Response<BookInfo[]> response) {
                     BookInfo[] books = response.body();
+
                     for (BookInfo book : books) {
-                        if (book.taken == 0) {
-                            LatLng point = new LatLng(book.Lat, book.Lng);
-                            Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
-                            marker.setTag(book.id);
-                            bookMarkers.put(book.id, marker);
+                        if (book.taken == 1) {
+                            Marker marker = bookMarkers.get(book.id);
+                            if (marker != null) {
+                                marker.remove();
+                                bookMarkers.remove(book.id);
+                            }
+                        } else {
+                            if (bookMarkers.get(book.id) == null) {
+                                LatLng point = new LatLng(book.Lat, book.Lng);
+                                Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                                marker.setTag(book.id);
+                                bookMarkers.put(book.id, marker);
+                            }
                         }
                     }
                 }
