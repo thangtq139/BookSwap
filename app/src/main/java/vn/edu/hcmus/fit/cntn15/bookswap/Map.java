@@ -29,6 +29,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -88,7 +90,12 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                         } else {
                             if (bookMarkers.get(book.id) == null) {
                                 LatLng point = new LatLng(book.Lat, book.Lng);
-                                Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                                Marker marker = mMap.addMarker(new MarkerOptions()
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.book))
+                                        .anchor((float)0.5, (float)0.5)
+                                        .position(point)
+                                        .title(book.name)
+                                        .snippet(book.description));
                                 marker.setTag(book.id);
                                 bookMarkers.put(book.id, marker);
                             }
@@ -326,7 +333,12 @@ public class Map extends Fragment implements GoogleMap.OnMarkerClickListener, On
                 for (BookInfo book : books) {
                     if (book.taken == 0) {
                         LatLng point = new LatLng(book.Lat, book.Lng);
-                        Marker marker = mMap.addMarker(new MarkerOptions().position(point).title(book.name).snippet(book.description));
+                        Marker marker = mMap.addMarker(new MarkerOptions()
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.book))
+                                .anchor((float)0.5, (float)0.5)
+                                .position(point)
+                                .title(book.name)
+                                .snippet(book.description));
                         marker.setTag(book.id);
                         bookMarkers.put(book.id, marker);
                     }
