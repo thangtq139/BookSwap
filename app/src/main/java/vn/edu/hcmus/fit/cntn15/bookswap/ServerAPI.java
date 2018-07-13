@@ -16,5 +16,5 @@ public interface ServerAPI {
     Call<GetStatus> takeBook(@Body TakenBook body);
 
     @GET("/user/history")
-    Call<UserBook[]> getHistory();
+    Call<UserBook[]> getHistory(@Body HistoryUser body);
 }
